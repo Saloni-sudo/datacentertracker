@@ -8,6 +8,7 @@ async function createReport(req, res, next) {
     res.status(201).json({
       id: created.id,
       status: created.status,
+      coordinates_resolved: created.coordinates_resolved,
       message: 'Report submitted for review',
       disclaimer: DISCLAIMER
     });

@@ -105,3 +105,45 @@ The list is empty until a report is approved. Until the admin dashboard exists, 
 ```bash
 /usr/local/mysql/bin/mysql -u root -p datacentertracker -e "UPDATE reports SET status='approved' WHERE id=1;"
 ```
+
+## Stage 3 — Geocoding (LocationIQ)
+
+Submitted addresses are converted to coordinates by [LocationIQ](https://locationiq.com) forward geocoding, called inside `POST /api/reports` before the insert.
+
+### Getting a key
+
+1. Sign up for a free LocationIQ account and copy the access token from the dashboard.
+2. Add it to `server/.env`:
+
+```
+LOCATIONIQ_API_KEY=pk.your_real_key_here
+LOCATIONIQ_BASE_URL=https://us1.locationiq.com/v1
+```
+
+LocationIQ assigns each account a regional endpoint. US accounts use `us1`, EU accounts use `eu1` — check your dashboard and set `LOCATIONIQ_BASE_URL` to match, or every request will fail. The key is read from the environment only; it is never committed.
+
+### Resilience rule
+
+Geocoding is enrichment, not a gate. If the provider errors, times out (5 seconds), returns no match, or the key is missing, `geocodeAddress` returns `null` and the report is still saved with NULL coordinates. A failed lookup produces a saved-but-unmapped report, never a dropped submission. Failures are logged server-side; the client only sees `coordinates_resolved: false` in the 201 response, so a later UI can show "location pending".
+
+### Testing
+
+```bash
+curl -i -X POST http://localhost:5050/api/reports -H 'Content-Type: application/json' -d '{"address":"21110 Ridgetop Circle, Sterling, VA 20166","concern_type":"water_usage","description":"Cooling towers audible at night.","region":"Loudoun County, VA"}'
+```
+
+Expect `201` with `"coordinates_resolved": true`, and populated lat/lng in the row.
+
+```bash
+curl -i -X POST http://localhost:5050/api/reports -H 'Content-Type: application/json' -d '{"address":"zzzzqqq not a real place 99999 xyzzy","concern_type":"noise","description":"Unresolvable address test."}'
+```
+
+Expect `201` with `"coordinates_resolved": false`, saved with NULL coordinates.
+
+```bash
+/usr/local/mysql/bin/mysql -u root -p datacentertracker -e "SELECT id, address, latitude, longitude, status FROM reports;"
+```
+
+### Seeding
+
+`seedReports.js` geocodes each address before inserting and waits 1 second between lookups, since LocationIQ's free tier allows 2 requests/second. The seed array is still empty; real locations come in a later stage.

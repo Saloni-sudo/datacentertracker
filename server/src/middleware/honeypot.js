@@ -8,6 +8,7 @@ function honeypot(req, res, next) {
   if (typeof trap === 'string' && trap.trim().length > 0) {
     return res.status(201).json({
       status: 'pending',
+      coordinates_resolved: false,
       message: 'Report submitted for review',
       disclaimer: DISCLAIMER
     });
