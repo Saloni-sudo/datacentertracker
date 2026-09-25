@@ -1,4 +1,5 @@
 import { Popup } from 'react-leaflet'
+import ReportThumbnails from './ReportThumbnails'
 import { concernLabel, sourceLabel } from '../config'
 
 function ReportPopup({ report }) {
@@ -12,6 +13,7 @@ function ReportPopup({ report }) {
         </p>
         <h3 className="popup__concern">{concernLabel(report.concern_type)}</h3>
         <p className="popup__description">{report.description}</p>
+        <ReportThumbnails images={report.images} width={300} />
         {report.region && <p className="popup__region">{report.region}</p>}
         <p className="popup__address">{report.address}</p>
       </div>

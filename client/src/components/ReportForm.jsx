@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { submitReport } from '../api/reports'
-import { CONCERN_TYPES, DISCLAIMER } from '../config'
+import { CONCERN_TYPES, DISCLAIMER, PHOTO_LIMITS } from '../config'
 
 const EMPTY_FORM = {
   address: '',
@@ -12,8 +12,33 @@ const EMPTY_FORM = {
 
 function ReportForm({ onSubmitted }) {
   const [form, setForm] = useState(EMPTY_FORM)
+  const [photos, setPhotos] = useState([])
   const [status, setStatus] = useState('idle')
   const [error, setError] = useState(null)
+
+  // Quick feedback only — the backend enforces the same limits for real.
+  function handlePhotoChange(event) {
+    const chosen = [...event.target.files]
+
+    if (chosen.length > PHOTO_LIMITS.maxFiles) {
+      setError(`Please choose at most ${PHOTO_LIMITS.maxFiles} photos.`)
+      event.target.value = ''
+      setPhotos([])
+      return
+    }
+
+    const tooBig = chosen.find((file) => file.size > PHOTO_LIMITS.maxBytes)
+
+    if (tooBig) {
+      setError(`"${tooBig.name}" is larger than 5 MB.`)
+      event.target.value = ''
+      setPhotos([])
+      return
+    }
+
+    setError(null)
+    setPhotos(chosen)
+  }
 
   function handleChange(event) {
     const { name, value } = event.target
@@ -26,8 +51,9 @@ function ReportForm({ onSubmitted }) {
     setError(null)
 
     try {
-      await submitReport(form)
+      await submitReport(form, photos)
       setForm(EMPTY_FORM)
+      setPhotos([])
       setStatus('submitted')
       onSubmitted?.()
     } catch (err) {
@@ -105,6 +131,19 @@ function ReportForm({ onSubmitted }) {
           value={form.region}
           onChange={handleChange}
           placeholder="Loudoun County, VA"
+        />
+      </label>
+
+      <label className="form__field">
+        <span>
+          Photos <em>(optional, up to {PHOTO_LIMITS.maxFiles}, 5 MB each)</em>
+        </span>
+        <input
+          type="file"
+          name="photos"
+          accept="image/jpeg,image/png,image/webp"
+          multiple
+          onChange={handlePhotoChange}
         />
       </label>
 

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { fetchReportsByStatus, updateReportStatus } from '../api/admin'
 import { clearToken } from '../auth/token'
+import ReportThumbnails from '../components/ReportThumbnails'
 import { concernLabel } from '../config'
 
 const STATUS_FILTERS = ['pending', 'approved', 'rejected', 'flagged']
@@ -89,6 +90,7 @@ function AdminDashboardPage() {
           <article key={report.id} className="card">
             <h2 className="card__title">{concernLabel(report.concern_type)}</h2>
             <p className="card__description">{report.description}</p>
+            <ReportThumbnails images={report.images} width={200} />
             <dl className="card__meta">
               <dt>Address</dt>
               <dd>{report.address}</dd>
