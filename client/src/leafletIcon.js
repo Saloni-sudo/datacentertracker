@@ -8,3 +8,8 @@ import shadowUrl from 'leaflet/dist/images/marker-shadow.png'
 // resolves from these imports; without it the pin images 404.
 delete L.Icon.Default.prototype._getIconUrl
 L.Icon.Default.mergeOptions({ iconRetinaUrl, iconUrl, shadowUrl })
+
+// Two pins so the sources are distinguishable at a glance; the popup label is what
+// actually states which is which.
+export const residentIcon = new L.Icon.Default()
+export const documentedIcon = new L.Icon.Default({ className: 'marker--documented' })

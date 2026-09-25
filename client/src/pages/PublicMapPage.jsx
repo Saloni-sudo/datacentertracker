@@ -28,8 +28,8 @@ function PublicMapPage() {
         <div>
           <h1 className="header__title">DataCenterTracker</h1>
           <p className="header__subtitle">
-            {reports.length} approved {reports.length === 1 ? 'report' : 'reports'} —{' '}
-            {DISCLAIMER.toLowerCase()}s
+            {reports.length} on the map — documented facilities and{' '}
+            {DISCLAIMER.toLowerCase()}s, each labelled
           </p>
         </div>
         <button

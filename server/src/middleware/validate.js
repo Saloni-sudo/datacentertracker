@@ -53,4 +53,38 @@ function validateIdParam(req, res, next) {
   next();
 }
 
-module.exports = { validateCreateReport, validateIdParam, CONCERN_TYPES };
+const REPORT_STATUSES = ['pending', 'approved', 'rejected', 'flagged'];
+const MODERATION_STATUSES = ['approved', 'rejected', 'flagged'];
+
+function validateStatusQuery(req, res, next) {
+  const { status = 'pending' } = req.query;
+
+  if (!REPORT_STATUSES.includes(status)) {
+    return res.status(400).json({ error: `status must be one of: ${REPORT_STATUSES.join(', ')}` });
+  }
+
+  req.moderationStatus = status;
+  next();
+}
+
+function validateStatusUpdate(req, res, next) {
+  const { status } = req.body ?? {};
+
+  if (!MODERATION_STATUSES.includes(status)) {
+    return res
+      .status(400)
+      .json({ error: `status must be one of: ${MODERATION_STATUSES.join(', ')}` });
+  }
+
+  req.newStatus = status;
+  next();
+}
+
+module.exports = {
+  validateCreateReport,
+  validateIdParam,
+  validateStatusQuery,
+  validateStatusUpdate,
+  CONCERN_TYPES,
+  REPORT_STATUSES
+};

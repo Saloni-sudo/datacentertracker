@@ -2,8 +2,11 @@ const fs = require('fs');
 const path = require('path');
 const pool = require('../config/db');
 
+// Defaults to the full schema; pass a path to run a single migration file instead.
+const target = process.argv[2] ?? path.join(__dirname, 'schema.sql');
+
 async function migrate() {
-  const sql = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
+  const sql = fs.readFileSync(path.resolve(target), 'utf8');
 
   // The pool keeps multipleStatements off (it limits the damage of any injection bug),
   // so the file is run one statement at a time.

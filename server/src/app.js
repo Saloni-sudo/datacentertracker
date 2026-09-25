@@ -1,6 +1,8 @@
 require('dotenv').config();
 const express = require('express');
 const reportsRoutes = require('./routes/reports.routes');
+const authRoutes = require('./routes/auth.routes');
+const adminRoutes = require('./routes/admin.routes');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -13,6 +15,8 @@ app.get('/health', (req, res) => {
 });
 
 app.use('/api/reports', reportsRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.use(errorHandler);
 

@@ -147,3 +147,114 @@ Expect `201` with `"coordinates_resolved": false`, saved with NULL coordinates.
 ### Seeding
 
 `seedReports.js` geocodes each address before inserting and waits 1 second between lookups, since LocationIQ's free tier allows 2 requests/second. The seed array is still empty; real locations come in a later stage.
+
+## Stage 4 — Public frontend (React + Leaflet)
+
+`client/` is a Vite + React app (plain JavaScript) showing approved reports as pins on a Leaflet map, with the public submission form in a side panel.
+
+### Running it
+
+The backend must already be running on port 5050:
+
+```bash
+cd server && npm run dev
+```
+
+Then, in a second terminal:
+
+```bash
+cd client && npm install && npm run dev
+```
+
+Open http://localhost:5173.
+
+### Dev proxy
+
+Vite serves the app on 5173 while the API is on 5050. Rather than opening CORS on the backend, `vite.config.js` proxies `/api` to `http://localhost:5050`, so the browser only ever talks to one origin in development. The API base path lives in `client/src/config.js` as `API_BASE_URL`, empty by default; set `VITE_API_BASE_URL` to point the client at a deployed API instead.
+
+### What you'll see
+
+The map is centered on the continental US. **It will be empty until a report is approved** — the public endpoint returns approved reports only, and the admin dashboard is a later stage. To see a pin, submit a report and then approve it by hand:
+
+```bash
+/usr/local/mysql/bin/mysql -u root -p datacentertracker -e "UPDATE reports SET status='approved' WHERE id=1;"
+```
+
+Refresh the map and the pin appears. Clicking it opens a popup with the concern type in human-readable form, the description, the region and the address, headed by an "Unverified resident submission" banner.
+
+Reports that failed geocoding have NULL coordinates and are skipped by the map — they can't be placed yet.
+
+### Submission form
+
+"Report a data center" opens the form panel. It posts JSON to `/api/reports`, shows a pending-review confirmation on success, and displays the backend's messages on a validation error. It includes the hidden `website` honeypot field that pairs with the Stage 2 backend check. Photo upload is a later stage.
+
+## Stage 5 — Admin auth and moderation
+
+Admins authenticate with a username and password; the password is stored only as a bcrypt hash (cost 12) and checked with `bcrypt.compare`. A successful login returns a JWT signed with `JWT_SECRET`, valid for 8 hours, whose payload carries only the user id, username and role — never the password or its hash. Every `/api/admin` route requires that token as `Authorization: Bearer <token>`.
+
+### New env vars
+
+```
+JWT_SECRET=a_long_random_string
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=choose_a_strong_password
+```
+
+Generate a secret with `openssl rand -base64 48`. `ADMIN_USERNAME`/`ADMIN_PASSWORD` are read once by the create-admin script; the password is hashed on insert and never stored as typed.
+
+### Creating the first admin
+
+```bash
+npm run db:migrate
+npm run db:create-admin
+```
+
+The migration adds the `users` table; the second command inserts the admin from your `.env`. Re-running it updates that admin's password rather than creating a duplicate.
+
+### Endpoints
+
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
+| `POST` | `/api/auth/login` | none | Returns a JWT. Wrong username and wrong password give the same `401 Invalid credentials`, so usernames can't be enumerated. Limited to 10 attempts per IP per 15 minutes. |
+| `GET` | `/api/admin/reports?status=pending` | Bearer | Moderation queue. Sees every status; defaults to `pending`. The status is validated against the allowed set before use. |
+| `PATCH` | `/api/admin/reports/:id/status` | Bearer | Sets a report to `approved`, `rejected` or `flagged`. |
+
+The public `GET /api/reports` is unchanged and still returns approved reports only. A report can reach `approved` only through an authenticated admin calling the PATCH endpoint — that is the single path that changes a status after creation.
+
+### Using the dashboard
+
+Log in at http://localhost:5173/admin/login. `/admin` redirects there when no token is stored. The queue defaults to pending, with filter chips for each status and Approve / Reject / Flag on each card; the list refreshes after each action. "Log out" clears the token.
+
+The token is kept in `localStorage`, so a refresh doesn't sign you out. The tradeoff is that any JavaScript on the page can read it, so an XSS bug would expose it; keeping it in memory only would avoid that at the cost of logging admins out on every reload.
+
+## Stage 6 — Documented facilities
+
+Reports now carry a `source`: `resident_submission` (the default, for anything submitted through the public form) or `documented_facility` (the seeded, publicly-reported data centers). The map labels the two differently so a documented fact and an unverified complaint never look alike.
+
+Like `status`, `source` is written as a SQL literal in `createReport` and is never read from the request body — a public submitter cannot post a report as a documented facility.
+
+### Upgrading an existing database
+
+`schema.sql` uses `CREATE TABLE IF NOT EXISTS`, so editing it does not alter a table that already exists. Run the ALTER migration once against your existing database:
+
+```bash
+npm run db:migrate:source
+```
+
+It adds the `source` column and its index. MySQL has no `ADD COLUMN IF NOT EXISTS`, so running it a second time fails with `Duplicate column name 'source'` — that error is expected and safe to ignore. A fresh database created with `npm run db:migrate` already has the column.
+
+### Seeding documented facilities
+
+```bash
+npm run db:seed
+```
+
+This inserts nine real, publicly-documented facilities (Ashburn and Sterling VA, The Dalles OR, Council Bluffs IA, Memphis TN, Abilene TX, Bluffdale UT, Newton County GA, Fort Worth TX) as `approved` + `documented_facility`, so they appear on the map immediately. Their descriptions summarise figures from public reporting on each site; they are documented facilities, not resident complaints, and the map says so.
+
+Each address is geocoded through the existing LocationIQ service with a **1-second delay between requests**, since the free tier allows 2 requests/second. Nine addresses therefore take roughly 10 seconds. An address that fails to geocode is still inserted with NULL coordinates and named in the summary, so the seed never stops halfway.
+
+The seed is safe to re-run: it first deletes rows where `source = 'documented_facility'`, refreshing the documented set without creating duplicates and without touching resident submissions.
+
+### On the map
+
+Documented facilities get a green pin and a green "Publicly documented data center" label. Resident submissions keep the blue pin and the yellow "Unverified resident submission" disclaimer.

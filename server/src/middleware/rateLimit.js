@@ -13,4 +13,13 @@ const submitLimiter = rateLimit({
   message: { error: 'Too many reports submitted from this IP. Try again in a few minutes.' }
 });
 
-module.exports = { submitLimiter };
+// Slows password guessing against the admin login.
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Too many login attempts. Try again later.' }
+});
+
+module.exports = { submitLimiter, loginLimiter };

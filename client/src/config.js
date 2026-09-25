@@ -3,6 +3,11 @@
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
 
 export const DISCLAIMER = 'Unverified resident submission'
+export const DOCUMENTED_LABEL = 'Publicly documented data center'
+
+export function sourceLabel(source) {
+  return source === 'documented_facility' ? DOCUMENTED_LABEL : DISCLAIMER
+}
 
 export const CONCERN_TYPES = [
   { value: 'water_usage', label: 'Water usage' },

@@ -153,7 +153,7 @@ button:disabled {
   min-width: 190px;
 }
 
-.popup__disclaimer {
+.popup__label {
   margin: 0 0 0.4rem;
   padding: 0.25rem 0.45rem;
   font-size: 0.72rem;
@@ -164,6 +164,17 @@ button:disabled {
   background: var(--warn-bg);
   border: 1px solid var(--warn-border);
   border-radius: 4px;
+}
+
+/* Documented facilities read as sourced fact, not as a resident complaint. */
+.popup__label--documented {
+  color: #10604a;
+  background: #e7f6f0;
+  border-color: #9ad3bf;
+}
+
+.marker--documented {
+  filter: hue-rotate(-75deg) saturate(1.15);
 }
 
 .popup__concern {
