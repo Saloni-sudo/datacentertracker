@@ -1,0 +1,38 @@
+:root {
+  --text: #1f2933;
+  --text-muted: #52606d;
+  --bg: #ffffff;
+  --border: #d9e2ec;
+  --accent: #1b6b52;
+  --accent-text: #ffffff;
+  --warn-bg: #fdf3d8;
+  --warn-border: #e5c76b;
+  --warn-text: #7a5c00;
+  --error-bg: #fdecec;
+  --error-text: #9b1c1c;
+
+  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+#root {
+  height: 100dvh;
+}
+.form__honeypot {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
