@@ -31,10 +31,30 @@ async function createReport({ address, concern_type, description, region }) {
   };
 }
 
-async function listApprovedReports() {
-  // Approved-only is hard-coded: pending/rejected/flagged reports never go public.
-  const [rows] = await pool.query(
-    `SELECT ${PUBLIC_FIELDS} FROM reports WHERE status = 'approved' ORDER BY created_at DESC`
+async function listApprovedReports(filters = {}) {
+  // Approved-only is hard-coded and always applies; filters only ever narrow within
+  // it by appending AND clauses, so no param can surface a non-approved report.
+  const clauses = ["status = 'approved'"];
+  const params = [];
+
+  if (filters.concern_type) {
+    clauses.push('concern_type = ?');
+    params.push(filters.concern_type);
+  }
+
+  if (filters.source) {
+    clauses.push('source = ?');
+    params.push(filters.source);
+  }
+
+  if (filters.region) {
+    clauses.push('region LIKE ?');
+    params.push(`%${filters.region}%`);
+  }
+
+  const [rows] = await pool.execute(
+    `SELECT ${PUBLIC_FIELDS} FROM reports WHERE ${clauses.join(' AND ')} ORDER BY created_at DESC`,
+    params
   );
 
   return rows;

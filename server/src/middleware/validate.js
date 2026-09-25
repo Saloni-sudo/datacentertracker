@@ -54,6 +54,38 @@ function validateIdParam(req, res, next) {
 }
 
 const REPORT_STATUSES = ['pending', 'approved', 'rejected', 'flagged'];
+const SOURCES = ['resident_submission', 'documented_facility'];
+
+// Only these three are accepted; status is deliberately not filterable from outside.
+function validateReportFilters(req, res, next) {
+  const { concern_type, source, region } = req.query;
+  const errors = [];
+
+  if (concern_type !== undefined && !CONCERN_TYPES.includes(concern_type)) {
+    errors.push(`concern_type must be one of: ${CONCERN_TYPES.join(', ')}`);
+  }
+
+  if (source !== undefined && !SOURCES.includes(source)) {
+    errors.push(`source must be one of: ${SOURCES.join(', ')}`);
+  }
+
+  if (region !== undefined && typeof region !== 'string') {
+    errors.push('region must be a string');
+  }
+
+  if (errors.length > 0) {
+    return res.status(400).json({ error: 'Invalid filter', details: errors });
+  }
+
+  req.reportFilters = {
+    concern_type,
+    source,
+    region: isNonEmptyString(region) ? region.trim() : undefined
+  };
+
+  next();
+}
+
 const MODERATION_STATUSES = ['approved', 'rejected', 'flagged'];
 
 function validateStatusQuery(req, res, next) {
@@ -85,6 +117,8 @@ module.exports = {
   validateIdParam,
   validateStatusQuery,
   validateStatusUpdate,
+  validateReportFilters,
   CONCERN_TYPES,
-  REPORT_STATUSES
+  REPORT_STATUSES,
+  SOURCES
 };

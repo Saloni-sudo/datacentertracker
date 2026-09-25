@@ -19,7 +19,7 @@ async function createReport(req, res, next) {
 
 async function listReports(req, res, next) {
   try {
-    const reports = await reportsService.listApprovedReports();
+    const reports = await reportsService.listApprovedReports(req.reportFilters);
 
     res.status(200).json({
       count: reports.length,
