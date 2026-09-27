@@ -8,9 +8,6 @@ function Footer({ lastUpdated, onSubmitClick }) {
         <div className="site-footer__brand">
           <p className="wordmark wordmark--small">{SITE_NAME}</p>
           <p className="site-footer__note">
-            A public record of resident observations around local data-center development.
-          </p>
-          <p className="site-footer__note">
             An independent student project. Not affiliated with any company or government body.
           </p>
         </div>
@@ -19,6 +16,7 @@ function Footer({ lastUpdated, onSubmitClick }) {
           <h2 className="site-footer__heading">Explore</h2>
           <Link to="/">Map</Link>
           <Link to="/reports">Reports</Link>
+          <Link to="/stats">Statistics</Link>
           <button type="button" className="site-footer__linkbutton" onClick={onSubmitClick}>
             Submit a report
           </button>
@@ -57,8 +55,8 @@ function Footer({ lastUpdated, onSubmitClick }) {
         </span>
         <span>Photos hosted on Cloudinary</span>
         <span>
-          <a href={GITHUB_REPO_URL} target="_blank" rel="noopener noreferrer">
-            Source code on GitHub
+          <a href="https://github.com/Saloni-sudo/datacentertracker" target="_blank" rel="noopener noreferrer">
+           Source code on GitHub
           </a>
         </span>
         {lastUpdated && <span>Updated {formatDate(lastUpdated)}</span>}

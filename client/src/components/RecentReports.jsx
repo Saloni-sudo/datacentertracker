@@ -5,12 +5,7 @@ import Skeleton from './Skeleton'
 function RecentReports({ reports, isLoading, onSelect }) {
   return (
     <section className="section">
-      <div className="section__head">
-        <h2 className="section__title">Recent reports</h2>
-        <Link className="section__link" to="/reports">
-          View all reports →
-        </Link>
-      </div>
+      <h2 className="section__title">Recent reports</h2>
 
       {isLoading && <Skeleton rows={3} />}
 
@@ -32,6 +27,10 @@ function RecentReports({ reports, isLoading, onSelect }) {
           <ReportRow key={report.id} report={report} onSelect={onSelect} />
         ))}
       </ul>
+
+      <p className="section__more">
+        <Link to="/reports">View all reports →</Link>
+      </p>
     </section>
   )
 }

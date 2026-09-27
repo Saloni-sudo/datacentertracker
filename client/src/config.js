@@ -2,7 +2,7 @@
 // VITE_API_BASE_URL to point at a deployed API instead.
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
 
-export const SITE_NAME = 'Data Center Watch'
+export const SITE_NAME = 'Data Center Tracker'
 export const CONTACT_EMAIL = 'projectdatacenter04@gmail.com'
 // TODO: replace with the real repository URL before launch.
 export const GITHUB_REPO_URL = 'https://github.com/your-username/datacentertracker'

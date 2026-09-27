@@ -38,7 +38,7 @@ function Methodology() {
   return (
     <section className="prose">
       <h1 className="prose__title">Methodology</h1>
-      <p className="prose__lede">A plain-language notice, not a legal document.</p>
+      
 
       <h2>Where the data comes from</h2>
       <p>

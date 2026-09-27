@@ -5,7 +5,7 @@ function AboutPage() {
     <div className="page">
       <section className="prose">
         <h1 className="prose__title">About the project</h1>
-        <p className="prose__lede">A plain-language notice, not a legal document.</p>
+       
 
         <p>
           {SITE_NAME} is an independent student project. It was built to explore how residents

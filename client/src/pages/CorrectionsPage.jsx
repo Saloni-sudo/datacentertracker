@@ -5,8 +5,6 @@ function CorrectionsPage() {
     <div className="page">
       <section className="prose">
         <h1 className="prose__title">Request a correction or removal</h1>
-        <p className="prose__lede">A plain-language notice, not a legal document.</p>
-
         <p>
           If something published here is wrong, out of date, or should not be public, email{' '}
           <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.

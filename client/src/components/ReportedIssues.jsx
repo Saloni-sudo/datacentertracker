@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { CONCERN_TYPES, concernLabel } from '../config'
 
 function ReportedIssues({ byConcernType = [] }) {
@@ -23,6 +24,10 @@ function ReportedIssues({ byConcernType = [] }) {
           )
         })}
       </ul>
+
+      <p className="section__more">
+        <Link to="/stats">See full statistics →</Link>
+      </p>
     </section>
   )
 }

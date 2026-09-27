@@ -5,6 +5,7 @@ import { SITE_NAME } from '../config'
 const NAV = [
   { to: '/', label: 'Explore map' },
   { to: '/reports', label: 'Reports' },
+  { to: '/stats', label: 'Statistics' },
   { to: '/methodology', label: 'Methodology' },
 ]
 
@@ -15,6 +16,8 @@ function Header({ onSubmitClick }) {
     <header className="site-header">
       <div className="site-header__bar">
         <Link className="wordmark" to="/" onClick={() => setIsOpen(false)}>
+          {/* The wordmark beside it already names the site, so the mark is decorative. */}
+          <img className="wordmark__mark" src="/favicon.svg" alt="" width="24" height="24" />
           {SITE_NAME}
         </Link>
 

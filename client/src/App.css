@@ -32,11 +32,20 @@
 }
 
 .wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
   font-family: var(--serif);
   font-size: 1.35rem;
   font-weight: 600;
   color: var(--ink);
   text-decoration: none;
+}
+
+.wordmark__mark {
+  width: 24px;
+  height: 24px;
+  flex: none;
 }
 
 .wordmark--small {
@@ -350,26 +359,18 @@ textarea {
   border-top: 1px solid var(--rule);
 }
 
-.section__head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--s1);
-}
 
 .section__title {
   margin: 0 0 var(--s2);
   font-size: 1.3rem;
 }
 
-.section__head .section__title {
-  margin-bottom: 0;
-}
 
-.section__link {
+.section__more {
+  margin: var(--s2) 0 0;
   font-size: 0.9rem;
 }
+
 
 .ledger,
 .ledger__head {
@@ -871,22 +872,27 @@ textarea {
 
 .charts {
   display: grid;
-  gap: var(--s3);
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--s5);
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
 }
 
-.chart-card {
-  padding: var(--s2);
-  border: 1px solid var(--rule);
+.chart {
+  min-width: 0;
+  padding-top: var(--s2);
+  border-top: 1px solid var(--rule);
 }
 
-.chart-card--wide {
+.chart--wide {
   grid-column: 1 / -1;
 }
 
-.chart-card__title {
+.chart__title {
   margin: 0 0 var(--s2);
-  font-size: 1.05rem;
+  font-size: 1.1rem;
+}
+
+.recharts-surface {
+  overflow: visible;
 }
 
 /* ---- Admin (behavior untouched; palette aligned) ----------------------- */
@@ -1175,6 +1181,16 @@ textarea {
   .bars__row {
     grid-template-columns: 6rem minmax(0, 1fr) 2rem;
     font-size: 0.85rem;
+  }
+
+  .wordmark__mark {
+    width: 20px;
+    height: 20px;
+  }
+
+  .charts {
+    gap: var(--s4);
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .site-footer__inner {

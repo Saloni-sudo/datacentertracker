@@ -3,7 +3,7 @@ function GuidelinesPage() {
     <div className="page">
       <section className="prose">
         <h1 className="prose__title">Content guidelines</h1>
-        <p className="prose__lede">A plain-language notice, not a legal document.</p>
+    
 
         <h2>What makes a good report</h2>
         <p>
