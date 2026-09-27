@@ -1,5 +1,12 @@
 node_modules/
+
+# Local and deployment env files; the example is the only one that ships
 .env
-.env.local
+.env.*
+!.env.example
+
+# TLS certificates (e.g. Aiven's CA)
+*.pem
+
 npm-debug.log*
 .DS_Store
