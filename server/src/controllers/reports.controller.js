@@ -3,12 +3,13 @@ const { DISCLAIMER } = require('../constants');
 
 async function createReport(req, res, next) {
   try {
-    const created = await reportsService.createReport(req.validatedReport);
+    const created = await reportsService.createReport(req.validatedReport, req.files);
 
     res.status(201).json({
       id: created.id,
       status: created.status,
       coordinates_resolved: created.coordinates_resolved,
+      photos_saved: created.photos_saved,
       message: 'Report submitted for review',
       disclaimer: DISCLAIMER
     });

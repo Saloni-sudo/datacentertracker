@@ -10,6 +10,9 @@ CREATE TABLE IF NOT EXISTS reports (
   status ENUM('pending', 'approved', 'rejected', 'flagged') NOT NULL DEFAULT 'pending',
   -- Keeps documented facilities distinct from unverified resident reports.
   source ENUM('resident_submission', 'documented_facility') NOT NULL DEFAULT 'resident_submission',
+  -- Citation for documented facilities; public submissions always leave these NULL.
+  source_name VARCHAR(255) NULL,
+  source_url VARCHAR(2048) NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),

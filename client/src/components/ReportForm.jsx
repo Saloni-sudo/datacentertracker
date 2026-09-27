@@ -81,6 +81,7 @@ function ReportForm({ onSubmitted }) {
     <form className="form" onSubmit={handleSubmit} noValidate={false}>
       <p className="form__notice">{DISCLAIMER}s are reviewed before appearing on the map.</p>
 
+
       {error && (
         <p className="form__error" role="alert">
           {error}
@@ -94,7 +95,7 @@ function ReportForm({ onSubmitted }) {
           value={form.address}
           onChange={handleChange}
           required
-          placeholder="1234 Data Center Way, Ashburn, VA"
+          placeholder="Street address, or the nearest intersection"
         />
       </label>
 
@@ -130,7 +131,7 @@ function ReportForm({ onSubmitted }) {
           name="region"
           value={form.region}
           onChange={handleChange}
-          placeholder="Loudoun County, VA"
+          placeholder="City or county"
         />
       </label>
 
@@ -160,6 +161,15 @@ function ReportForm({ onSubmitted }) {
           tabIndex="-1"
           autoComplete="off"
         />
+      </div>
+
+      <div className="form__privacy">
+        <p className="label">Before you submit</p>
+        <p>
+          Approved reports and their photos become public. Please leave out names, phone numbers and
+          other personal details about individuals, and avoid photos showing people&rsquo;s faces or
+          the inside of private property.
+        </p>
       </div>
 
       <button type="submit" disabled={status === 'submitting'}>

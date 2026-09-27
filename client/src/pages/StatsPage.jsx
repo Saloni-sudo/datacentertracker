@@ -12,15 +12,13 @@ function StatsPage() {
   }, [])
 
   return (
-    <div className="stats">
-      <header className="header">
-        <div>
-          <h1 className="header__title">Statistics</h1>
-          <p className="header__subtitle">
-            {stats ? `${stats.total_approved} approved reports` : 'Loading…'} —{' '}
-            <Link to="/">back to map</Link>
-          </p>
-        </div>
+    <div className="page stats">
+      <header className="page__head">
+        <h1 className="page__title">Statistics</h1>
+        <p className="page__intro">
+          {stats ? `${stats.total_approved} approved reports` : 'Loading…'} —{' '}
+          <Link to="/">back to map</Link>
+        </p>
       </header>
 
       {error && <p className="app__error">{error}</p>}

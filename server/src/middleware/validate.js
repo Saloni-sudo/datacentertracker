@@ -57,8 +57,10 @@ const REPORT_STATUSES = ['pending', 'approved', 'rejected', 'flagged'];
 const SOURCES = ['resident_submission', 'documented_facility'];
 
 // Only these three are accepted; status is deliberately not filterable from outside.
+const MAX_LIMIT = 50;
+
 function validateReportFilters(req, res, next) {
-  const { concern_type, source, region } = req.query;
+  const { concern_type, source, region, limit } = req.query;
   const errors = [];
 
   if (concern_type !== undefined && !CONCERN_TYPES.includes(concern_type)) {
@@ -73,6 +75,15 @@ function validateReportFilters(req, res, next) {
     errors.push('region must be a string');
   }
 
+  const parsedLimit = limit === undefined ? undefined : Number(limit);
+
+  if (
+    parsedLimit !== undefined &&
+    (!Number.isInteger(parsedLimit) || parsedLimit < 1 || parsedLimit > MAX_LIMIT)
+  ) {
+    errors.push(`limit must be an integer between 1 and ${MAX_LIMIT}`);
+  }
+
   if (errors.length > 0) {
     return res.status(400).json({ error: 'Invalid filter', details: errors });
   }
@@ -80,7 +91,8 @@ function validateReportFilters(req, res, next) {
   req.reportFilters = {
     concern_type,
     source,
-    region: isNonEmptyString(region) ? region.trim() : undefined
+    region: isNonEmptyString(region) ? region.trim() : undefined,
+    limit: parsedLimit
   };
 
   next();

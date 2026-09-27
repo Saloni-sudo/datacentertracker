@@ -1,21 +1,44 @@
+/* Design tokens. Every component style reads from these. */
 :root {
-  --text: #1f2933;
-  --text-muted: #52606d;
-  --bg: #ffffff;
-  --border: #d9e2ec;
-  --accent: #1b6b52;
-  --accent-text: #ffffff;
-  --warn-bg: #fdf3d8;
-  --warn-border: #e5c76b;
-  --warn-text: #7a5c00;
-  --error-bg: #fdecec;
-  --error-text: #9b1c1c;
+  /* Paper and ink */
+  --paper: #f7f5f0;
+  --paper-sunk: #efece4;
+  --ink: #1c1b19;
+  --ink-muted: #5c574f;
+  --rule: #d8d3c8;
+  --rule-strong: #b9b2a3;
 
-  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  /* One accent, used sparingly */
+  --accent: #b5402f;
+  --accent-ink: #8f3325;
+  --slate: #4a5561;
+
+  --error: #8f2317;
+  --error-bg: #f6e7e4;
+
+  /* Type */
+  --serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --sans: 'Public Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Consolas, monospace;
+
+  /* 8px spacing scale */
+  --s1: 0.5rem;
+  --s2: 1rem;
+  --s3: 1.5rem;
+  --s4: 2rem;
+  --s5: 3rem;
+  --s6: 4rem;
+
+  --measure: 70ch;
+  --page: 1180px;
+  --radius: 2px;
+
+  font-family: var(--sans);
   font-size: 16px;
-  line-height: 1.5;
-  color: var(--text);
-  background: var(--bg);
+  line-height: 1.6;
+  color: var(--ink);
+  background: var(--paper);
+  -webkit-font-smoothing: antialiased;
 }
 
 * {
@@ -24,15 +47,54 @@
 
 body {
   margin: 0;
+  background: var(--paper);
 }
 
 #root {
-  height: 100dvh;
+  min-height: 100dvh;
 }
-.form__honeypot {
-  position: absolute;
-  left: -9999px;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
+
+h1,
+h2,
+h3 {
+  font-family: var(--serif);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.005em;
+}
+
+a {
+  color: var(--accent-ink);
+  text-underline-offset: 2px;
+}
+
+a:hover {
+  color: var(--accent);
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+/* Numbers line up in columns wherever they appear. */
+.mono,
+.num {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Small uppercase labels are monospace, never pills. */
+.label {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }

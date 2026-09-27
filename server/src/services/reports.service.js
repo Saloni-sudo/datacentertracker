@@ -1,18 +1,53 @@
 const pool = require('../config/db');
 const { geocodeAddress } = require('./geocoding.service');
+const { uploadReportImages } = require('./imageUpload.service');
 
 const PUBLIC_FIELDS =
-  'id, address, latitude, longitude, concern_type, description, region, source, created_at';
+  'id, address, latitude, longitude, concern_type, description, region, source, source_name, source_url, created_at';
 
-async function createReport({ address, concern_type, description, region }) {
+// One query for every report in the page, rather than one per report.
+async function attachImages(reports) {
+  if (reports.length === 0) {
+    return reports;
+  }
+
+  const [rows] = await pool.query(
+    'SELECT report_id, image_url FROM report_images WHERE report_id IN (?) ORDER BY id',
+    [reports.map((report) => report.id)]
+  );
+
+  const byReport = new Map();
+
+  for (const row of rows) {
+    byReport.set(row.report_id, [...(byReport.get(row.report_id) ?? []), row.image_url]);
+  }
+
+  return reports.map((report) => ({ ...report, images: byReport.get(report.id) ?? [] }));
+}
+
+async function saveReportImages(reportId, files) {
+  const urls = await uploadReportImages(files);
+
+  for (const url of urls) {
+    await pool.execute('INSERT INTO report_images (report_id, image_url) VALUES (?, ?)', [
+      reportId,
+      url
+    ]);
+  }
+
+  return urls.length;
+}
+
+async function createReport({ address, concern_type, description, region }, files = []) {
   // Returns null when the address can't be resolved; the report is saved either way.
   const coordinates = await geocodeAddress(address);
 
-  // status and source are literals here, never taken from the caller: a public
-  // submitter must not be able to self-approve or pose as a documented facility.
+  // status, source and the citation columns are literals here, never taken from the
+  // caller: a public submitter must not self-approve, pose as a documented facility,
+  // or attach a source citation to their own report.
   const sql = `
-    INSERT INTO reports (address, concern_type, description, region, latitude, longitude, status, source)
-    VALUES (?, ?, ?, ?, ?, ?, 'pending', 'resident_submission')
+    INSERT INTO reports (address, concern_type, description, region, latitude, longitude, status, source, source_name, source_url)
+    VALUES (?, ?, ?, ?, ?, ?, 'pending', 'resident_submission', NULL, NULL)
   `;
 
   const [result] = await pool.execute(sql, [
@@ -24,10 +59,15 @@ async function createReport({ address, concern_type, description, region }) {
     coordinates?.longitude ?? null
   ]);
 
+  // The report is already saved at this point, so a failed upload costs a photo,
+  // never the submission.
+  const photosSaved = files.length > 0 ? await saveReportImages(result.insertId, files) : 0;
+
   return {
     id: result.insertId,
     status: 'pending',
-    coordinates_resolved: coordinates !== null
+    coordinates_resolved: coordinates !== null,
+    photos_saved: photosSaved
   };
 }
 
@@ -52,12 +92,19 @@ async function listApprovedReports(filters = {}) {
     params.push(`%${filters.region}%`);
   }
 
+  // The limit is validated and capped upstream; it still travels as a placeholder.
+  const limitClause = filters.limit ? ' LIMIT ?' : '';
+
+  if (filters.limit) {
+    params.push(filters.limit);
+  }
+
   const [rows] = await pool.execute(
-    `SELECT ${PUBLIC_FIELDS} FROM reports WHERE ${clauses.join(' AND ')} ORDER BY created_at DESC`,
+    `SELECT ${PUBLIC_FIELDS} FROM reports WHERE ${clauses.join(' AND ')} ORDER BY created_at DESC${limitClause}`,
     params
   );
 
-  return rows;
+  return attachImages(rows);
 }
 
 async function getApprovedReportById(id) {
@@ -66,7 +113,9 @@ async function getApprovedReportById(id) {
     [id]
   );
 
-  return rows[0] ?? null;
+  const [withImages] = await attachImages(rows);
+
+  return withImages ?? null;
 }
 
 const MODERATION_FIELDS = `${PUBLIC_FIELDS}, status, updated_at`;
@@ -77,7 +126,7 @@ async function listReportsByStatus(status) {
     [status]
   );
 
-  return rows;
+  return attachImages(rows);
 }
 
 // The only path that changes a report's status after creation, and it sits behind

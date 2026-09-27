@@ -1,6 +1,10 @@
-import { thumbnailUrl } from '../config'
+import { imageUrl, photoAlt, thumbnailUrl } from '../config'
 
-function ReportThumbnails({ images = [], width = 300 }) {
+// Both the thumbnail and the "open full size" link go through a Cloudinary
+// transformation so the original file — and its EXIF/GPS metadata — is never served.
+function ReportThumbnails({ report, width = 300 }) {
+  const images = report.images ?? []
+
   if (images.length === 0) {
     return null
   }
@@ -8,8 +12,13 @@ function ReportThumbnails({ images = [], width = 300 }) {
   return (
     <div className="thumbs">
       {images.map((url) => (
-        <a key={url} href={url} target="_blank" rel="noreferrer noopener">
-          <img className="thumbs__img" src={thumbnailUrl(url, width)} alt="" loading="lazy" />
+        <a key={url} href={imageUrl(url)} target="_blank" rel="noopener noreferrer">
+          <img
+            className="thumbs__img"
+            src={thumbnailUrl(url, width)}
+            alt={photoAlt(report)}
+            loading="lazy"
+          />
         </a>
       ))}
     </div>

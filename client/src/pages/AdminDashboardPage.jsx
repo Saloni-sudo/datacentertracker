@@ -90,7 +90,7 @@ function AdminDashboardPage() {
           <article key={report.id} className="card">
             <h2 className="card__title">{concernLabel(report.concern_type)}</h2>
             <p className="card__description">{report.description}</p>
-            <ReportThumbnails images={report.images} width={200} />
+            <ReportThumbnails report={report} width={200} />
             <dl className="card__meta">
               <dt>Address</dt>
               <dd>{report.address}</dd>

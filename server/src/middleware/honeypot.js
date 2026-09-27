@@ -9,6 +9,7 @@ function honeypot(req, res, next) {
     return res.status(201).json({
       status: 'pending',
       coordinates_resolved: false,
+      photos_saved: 0,
       message: 'Report submitted for review',
       disclaimer: DISCLAIMER
     });

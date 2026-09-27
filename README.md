@@ -258,3 +258,150 @@ The seed is safe to re-run: it first deletes rows where `source = 'documented_fa
 ### On the map
 
 Documented facilities get a green pin and a green "Publicly documented data center" label. Resident submissions keep the blue pin and the yellow "Unverified resident submission" disclaimer.
+
+## Stage 7 — Filtering and statistics
+
+### Filtering the public map
+
+`GET /api/reports` accepts three optional query params:
+
+| Param | Values | Matching |
+| --- | --- | --- |
+| `concern_type` | one of the five enums | exact |
+| `source` | `resident_submission` or `documented_facility` | exact |
+| `region` | free text | parameterized `LIKE '%value%'` |
+
+```bash
+curl "http://localhost:5050/api/reports?concern_type=water_usage&region=TX"
+```
+
+Invalid `concern_type` or `source` values return `400`. Filters **narrow within approved reports**: the query starts from a hard-coded `WHERE status = 'approved'` and filters are appended as additional `AND` clauses with `?` placeholders, so no param can surface a pending, rejected or flagged report. `status` is not a filterable param — passing `?status=pending` simply has no effect.
+
+On the map, the filter bar above it re-fetches as you change a dropdown or type a region, and the pin count updates alongside.
+
+### Statistics
+
+`GET /api/stats` is public — aggregate counts only, no per-report detail:
+
+```json
+{
+  "disclaimer": "unverified resident submission",
+  "data": {
+    "total_approved": 9,
+    "by_concern_type": [{ "concern_type": "water_usage", "count": 5 }],
+    "by_source": [{ "source": "documented_facility", "count": 9 }],
+    "by_region": [{ "region": "Loudoun County, VA", "count": 2 }]
+  }
+}
+```
+
+Every figure is computed by MySQL with `COUNT(*)` and `GROUP BY` in `stats.service.js`, not by looping in JavaScript, and each query carries the same hard-coded `WHERE status = 'approved'`. Regions are capped at the top 10 via a parameterized `LIMIT ?`.
+
+The dashboard lives at http://localhost:5173/stats, linked from the map header. It renders three Recharts charts — reports by concern (bar), by source (pie), and top regions (horizontal bar) — all responsive, using the shared labels from `config.js`.
+
+## Stage 8 — Photo uploads (Cloudinary)
+
+Reports can carry up to three optional photos. Files are parsed by multer into memory and uploaded to Cloudinary; the returned `secure_url` is stored in the existing `report_images` table.
+
+### Env vars
+
+```
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+```
+
+### Limits
+
+- **3 photos** per submission
+- **5 MB** per photo
+- **JPEG, PNG or WebP** only
+
+Exceeding any of these returns a `400` with a plain message. The mimetype is client-supplied, so it's only a first filter; Cloudinary's `resource_type: 'image'` upload is the second check.
+
+### Why Cloudinary, not local disk
+
+Multer uses memory storage and nothing is written to the server's filesystem. The deploy target's disk is ephemeral — files written there disappear on restart or redeploy — so uploads go straight to Cloudinary, which also handles resizing and format conversion for thumbnails.
+
+### Order of operations
+
+Middleware on `POST /api/reports` runs rate limit → multer → honeypot → validation → controller. Multer has to run before the honeypot because `express.json()` does not parse `multipart/form-data`; without it `req.body` would be empty and the honeypot would silently stop catching bots. Multer only buffers in memory, so **nothing is uploaded to Cloudinary until the request has passed both the honeypot and validation** — a bot or an invalid submission never costs an upload.
+
+Photos are optional enrichment, like geocoding. The report row is inserted first; if an upload fails it is logged server-side and skipped, and the response still returns `201` with `photos_saved` telling the client how many made it.
+
+### Viewing photos
+
+`GET /api/reports`, `GET /api/reports/:id` and the admin queue each include an `images` array. Images for a whole page of reports are fetched in one `WHERE report_id IN (?)` query and attached in JS, so there is no N+1. Thumbnails are requested from Cloudinary at `w_300,f_auto,q_auto` rather than full size, and clicking one opens the original in a new tab.
+
+### Known limitation
+
+Photos attached to a **pending** report are stored at unguessable but technically public Cloudinary URLs. The public API never serves them until the report is approved, so they are not discoverable through the app — but anyone holding the URL could open it. Private delivery with signed URLs is out of scope for now.
+
+## Stage 9 — Marker clustering
+
+Nearby pins group into a numbered bubble at low zoom and split apart as you zoom in; clicking or tapping a cluster zooms to its contents. With facilities concentrated in places like the Ashburn–Sterling corridor, this keeps overlapping pins readable.
+
+Clustering uses **`react-leaflet-cluster`** (v4), whose peer dependencies match this project exactly: React 19, react-leaflet 5 and `@react-leaflet/core` 3. Earlier major versions target react-leaflet 4 and would not work here. It wraps `leaflet.markercluster`, whose two stylesheets (`MarkerCluster.css` and `MarkerCluster.Default.css`) are imported in `ReportsMap.jsx` — without them the cluster bubbles and zoom animations render unstyled.
+
+The change is confined to `ReportsMap.jsx`: the existing markers are wrapped in a `MarkerClusterGroup`. Popups, source labels, photo thumbnails, filters, the null-coordinate skip and the default-icon fix are all unchanged.
+
+## Stage 10 — Public site redesign
+
+The public site is now branded **Data Center Watch** (set once as `SITE_NAME` in `client/src/config.js`). The look: Libre Caslon Text for display headings, system sans for body copy, a warm off-white ground (`#faf7f2`), terracotta (`#c1663f`) for primary actions and highlights, thin neutral borders and generous whitespace.
+
+### Page structure
+
+| Route | Contents |
+| --- | --- |
+| `/` | Hero, map with side panel, key figures strip, then Recent reports + Reported issues |
+| `/reports` | Every approved report and site, with concern / source / region filters |
+| `/methodology` | How the data is gathered, the disclaimer, and contact |
+| `/stats` | The Recharts statistics dashboard from Stage 7 |
+| `/admin`, `/admin/login` | Unchanged, and deliberately absent from the public navigation |
+
+Methodology is its own page rather than a homepage section: the homepage already carries the map, figures and two columns, and a standalone page gives the nav a stable destination to link to.
+
+The map keeps its clustering, filters and null-coordinate skip. Markers are coloured by source — terracotta for resident submissions, dark grey for documented sites — with a legend using the same labels as everywhere else. Selecting a pin opens the side panel (right on desktop, stacked below the map on phones); it always leads with the source label. Scroll-wheel zoom is off so the page scrolls normally past the map; the +/− buttons, double-click, drag and pinch all still zoom.
+
+### API additions
+
+`GET /api/stats` now also returns, all computed in SQL over approved reports only:
+
+- `sites_tracked` — approved `documented_facility` count
+- `resident_reports` — approved `resident_submission` count
+- `reports_last_30_days` — approved reports with `created_at >= NOW() - INTERVAL 30 DAY`
+- `last_updated` — the most recent `updated_at`, shown as "Updated <date>" in the hero
+
+`GET /api/reports` accepts an optional **`limit`**: an integer from 1 to 50, validated before use and passed as a `?` placeholder. The homepage uses `?source=resident_submission&limit=6` for its Recent reports list. Out-of-range, non-integer or injected values return `400`.
+
+All earlier trust rules are untouched: public endpoints remain approved-only, filters and `limit` only narrow within that, submissions are still forced to `pending` / `resident_submission`, and the honeypot is unchanged.
+
+## Stage 10b — Trust, transparency and the full footer
+
+### Source citations on documented sites
+
+`reports` gained two nullable columns, `source_name VARCHAR(255)` and `source_url VARCHAR(2048)`. Fresh databases get them from `schema.sql`; an existing one needs migration 002:
+
+```bash
+npm run db:migrate:citation
+```
+
+Like migration 001, MySQL has no `ADD COLUMN IF NOT EXISTS`, so a second run fails with `Duplicate column name` — expected and safe to ignore. Re-seed afterwards so the documented sites carry their citations:
+
+```bash
+npm run db:seed
+```
+
+Public submissions can never set these. They are written as SQL literal `NULL` in `createReport`, alongside the forced `pending` status and `resident_submission` source, and they are not part of submission validation. Both fields are returned by the public API, and documented sites render "Source: &lt;name&gt; ↗" as an external link in the side panel and on the Reports page. The full list lives at `/methodology#data-sources`.
+
+### Photo privacy (EXIF)
+
+Uploaded photos can carry EXIF metadata including GPS coordinates. Every image the site shows or links — thumbnails **and** the full-size view, on the public site and in the admin queue — goes through `imageUrl()` in `client/src/config.js`, which rewrites the URL to a Cloudinary transformation (`w_…,f_auto,q_auto`). Cloudinary re-encodes the file on delivery, which strips that metadata. The original `secure_url` is never linked directly.
+
+### Trust signals
+
+A line beside the map reads "Resident reports are reviewed by a moderator before publication. Reviewed does not mean verified," linking to Methodology. The submission form carries a privacy note asking people to leave out personal details and to avoid photos showing faces or private interiors. Lists use loading skeletons and the empty state "No reports match these filters", photos have descriptive `alt` text, and keyboard focus is visible throughout.
+
+### New pages
+
+`/about`, `/privacy`, `/guidelines` and `/corrections`, each marked as a plain-language notice rather than a legal document. The footer has four columns — brand, Explore, About, Trust &amp; policies — over a bottom bar with the copyright, OpenStreetMap and LocationIQ attribution, the Cloudinary note, a GitHub link and the last-updated date. Set `GITHUB_REPO_URL` in `client/src/config.js`; it currently holds a placeholder.
